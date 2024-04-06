@@ -35,4 +35,5 @@ class UserDataManager(private val usersCollection: MongoCollection<User>) {
             }
         }
     }
+
 }

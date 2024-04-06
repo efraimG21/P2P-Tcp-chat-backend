@@ -11,3 +11,5 @@ data class Chat(
     val usersUid: Pair<String, String>,
     val messages: List<Message>
 )
+
+
