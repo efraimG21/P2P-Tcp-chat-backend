@@ -1,7 +1,8 @@
 package models
+
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import java.util.Date
+import java.util.*
 
 @Serializable
 data class Message(
@@ -9,4 +10,6 @@ data class Message(
     val content: String,
     @Contextual
     val timeStamp: Date,
+    val status: String,
 )
+
