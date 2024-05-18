@@ -10,7 +10,8 @@ import kotlinx.coroutines.withContext
 
 fun Route.chatRouting(chatDataManager: ChatDataManager) {
     route("/chat") {
-        get("/get/{uid1?}/{uid2?}") {           val uid1 = call.parameters["uid1"]
+        get("/get/{uid1?}/{uid2?}") {
+            val uid1 = call.parameters["uid1"]
             val uid2 = call.parameters["uid2"]
             if (uid1 == null || uid2 == null) {
                 call.respond(HttpStatusCode.BadRequest, "uid missing")

@@ -4,7 +4,6 @@ import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import models.WebSocketConnectionSession
 import socketHandling.WebSocketManager
 
 
@@ -16,6 +15,7 @@ fun Route.webSocketRouting(webSocketManager: WebSocketManager) {
                 if (uid == null) {
                     call.respond(HttpStatusCode.BadRequest, "error no uid provided")
                 }
+//                webSocketManager.onStartConnection(uid.toString())
 
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadGateway, "error in web socket: ${e}")
