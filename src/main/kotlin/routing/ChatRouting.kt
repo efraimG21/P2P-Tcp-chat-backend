@@ -7,8 +7,13 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import models.User
+import org.slf4j.LoggerFactory
+import userHandling.UserDataManager
 
-fun Route.chatRouting(chatDataManager: ChatDataManager) {
+val logger = LoggerFactory.getLogger("chatRouting")
+
+fun Route.chatRouting(chatDataManager: ChatDataManager, userDataManager: UserDataManager) {
     route("/chat") {
         get("/get/{uid1?}/{uid2?}") {
             val uid1 = call.parameters["uid1"]
@@ -17,7 +22,16 @@ fun Route.chatRouting(chatDataManager: ChatDataManager) {
                 call.respond(HttpStatusCode.BadRequest, "uid missing")
                 return@get
             }
+            if (uid1 == uid2)
+            {
+                call.respond(HttpStatusCode.BadRequest, "uid same")
+                return@get
+            }
             try {
+                if (!userDataManager.doesUserExist(uid1) || !userDataManager.doesUserExist(uid2)) {
+                    call.respond(HttpStatusCode.BadGateway)
+                    return@get
+                }
                 val chat = withContext(Dispatchers.IO) {
                     chatDataManager.getChat(uid1, uid2)
                 }

@@ -19,7 +19,7 @@ fun Application.configureRouting(usersCollection: MongoCollection<User>, chatCol
 
     routing {
         userRouting(userDataManager)
-        chatRouting(chatDataManager)
+        chatRouting(chatDataManager, userDataManager)
         webSocketRouting(webSocketManager)
     }
 }
