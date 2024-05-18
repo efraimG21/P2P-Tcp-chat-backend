@@ -18,18 +18,21 @@ fun Route.chatRouting(chatDataManager: ChatDataManager, userDataManager: UserDat
         get("/get/{uid1?}/{uid2?}") {
             val uid1 = call.parameters["uid1"]
             val uid2 = call.parameters["uid2"]
+
             if (uid1 == null || uid2 == null) {
                 call.respond(HttpStatusCode.BadRequest, "uid missing")
                 return@get
             }
-            if (uid1 == uid2)
-            {
+            if (uid1 == uid2) {
                 call.respond(HttpStatusCode.BadRequest, "uid same")
                 return@get
             }
             try {
-                if (!userDataManager.doesUserExist(uid1) || !userDataManager.doesUserExist(uid2)) {
-                    call.respond(HttpStatusCode.BadGateway)
+                val userExists = withContext(Dispatchers.IO) {
+                    userDataManager.doesUserExist(uid1) && userDataManager.doesUserExist(uid2)
+                }
+                if (!userExists) {
+                    call.respond(HttpStatusCode.NotFound, "One or both users do not exist")
                     return@get
                 }
                 val chat = withContext(Dispatchers.IO) {
@@ -37,8 +40,9 @@ fun Route.chatRouting(chatDataManager: ChatDataManager, userDataManager: UserDat
                 }
                 call.respond(HttpStatusCode.OK, chat)
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadGateway, "error in get chat: $e")
+                call.respond(HttpStatusCode.InternalServerError, "Error retrieving chat: ${e.localizedMessage}")
             }
         }
+
     }
 }
