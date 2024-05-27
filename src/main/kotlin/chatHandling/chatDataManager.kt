@@ -4,9 +4,11 @@ import com.mongodb.client.MongoCollection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import models.Chat
+import models.Message
 import org.litote.kmongo.eq
 import org.litote.kmongo.findOne
 import org.litote.kmongo.or
+import org.litote.kmongo.push
 
 class ChatDataManager(private val chatCollection: MongoCollection<Chat>) {
 
@@ -28,5 +30,14 @@ class ChatDataManager(private val chatCollection: MongoCollection<Chat>) {
             chatCollection.insertOne(newChat)
         }
         return newChat
+    }
+
+    suspend fun addMessage(chatUid: String, message: Message) {
+        withContext(Dispatchers.IO) {
+            chatCollection.updateOne(
+                Chat::_id eq chatUid,
+                push(Chat::messages, message)
+            )
+        }
     }
 }
