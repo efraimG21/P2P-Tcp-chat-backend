@@ -50,4 +50,10 @@ class UserDataManager(private val usersCollection: MongoCollection<User>) {
             }
         }
     }
+
+    suspend fun deleteUser(uid: String) {
+        withContext(Dispatchers.IO) {
+            usersCollection.deleteOne(User::_id eq uid);
+        }
+    }
 }
