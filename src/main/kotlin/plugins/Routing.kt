@@ -1,6 +1,6 @@
 package plugins
 
-import chatHandling.ChatDataManager
+import handling.chatHandling.ChatDataManager
 import com.mongodb.client.MongoCollection
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
@@ -9,12 +9,12 @@ import models.User
 import routing.chatRouting
 import routing.userRouting
 import routing.webSocketRouting
-import socketHandling.WebSocketManager
-import userHandling.UserDataManager
+import handling.socketHandling.WebSocketManager
+import handling.userHandling.UserDataManager
 
 fun Application.configureRouting(usersCollection: MongoCollection<User>, chatCollection: MongoCollection<Chat>) {
-    val userDataManager = UserDataManager(usersCollection)
     val chatDataManager = ChatDataManager(chatCollection)
+    val userDataManager = UserDataManager(usersCollection, chatDataManager)
     val webSocketManager = WebSocketManager(userDataManager, chatDataManager)
 
     routing {

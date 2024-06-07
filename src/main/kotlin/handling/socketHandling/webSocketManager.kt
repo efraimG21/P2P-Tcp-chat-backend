@@ -1,6 +1,6 @@
-package socketHandling
+package handling.socketHandling
 
-import chatHandling.ChatDataManager
+import handling.chatHandling.ChatDataManager
 import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,7 +10,8 @@ import kotlinx.serialization.json.Json
 import models.WebSocketFrame
 import org.litote.kmongo.json
 import org.slf4j.LoggerFactory
-import userHandling.UserDataManager
+import handling.userHandling.UserDataManager
+import java.lang.Thread.sleep
 import java.util.*
 
 class WebSocketManager(private val userDataManager: UserDataManager, private val chatDataManager: ChatDataManager) {
@@ -23,11 +24,9 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
 
         if (!socketSessionsCollection.containsKey(uid) && user != null)
         {
-
             currentUserUID = uid
             socketSessionsCollection[uid] = session
             notification("userLogIn", user)
-
         } else {
             session.close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "UID already connected"))
         }
@@ -51,8 +50,14 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
             session.close()
             socketSessionsCollection.remove(uid)
             logger.info("Disconnected session for UID: $uid")
-//            userDataManager.deleteUser(uid)
-            notification("userLogOut", uid)
+            sleep(10000)
+            if (!socketSessionsCollection.containsKey(uid))
+            {
+                logger.info("Deleted UID: $uid")
+                notification("userLogOut", uid)
+                userDataManager.deleteUser(uid)
+            }
+
         }
 
     }

@@ -12,7 +12,7 @@ import models.ApiResponse
 import models.User
 import org.litote.kmongo.json
 import org.slf4j.LoggerFactory
-import userHandling.UserDataManager
+import handling.userHandling.UserDataManager
 
 fun Route.userRouting(userDataManager: UserDataManager) {
     val logger = LoggerFactory.getLogger("userRouting")
@@ -63,6 +63,25 @@ fun Route.userRouting(userDataManager: UserDataManager) {
                     userDataManager.getUsersList()
                 }
                 call.respond(HttpStatusCode.OK, userList)
+            } catch (e: Exception) {
+                logger.error("Error retrieving user list: ${e.message}", e)
+                call.respond(HttpStatusCode.InternalServerError, "Error retrieving user list: ${e.message}")
+            }
+        }
+
+
+        get("/sorted-user-list/{uid}") {
+            try {
+                val uid = call.parameters["uid"]
+                if (uid == null) {
+                    logger.warn("get called without uid parameter")
+                    call.respond(HttpStatusCode.BadRequest, "uid missing")
+                    return@get
+                }
+                val sortedList = withContext(Dispatchers.IO) {
+                    userDataManager.getUsersListSorted(uid)
+                }
+                call.respond(HttpStatusCode.OK, sortedList)
             } catch (e: Exception) {
                 logger.error("Error retrieving user list: ${e.message}", e)
                 call.respond(HttpStatusCode.InternalServerError, "Error retrieving user list: ${e.message}")

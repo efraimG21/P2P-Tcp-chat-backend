@@ -1,13 +1,15 @@
-package userHandling
+package handling.userHandling
 
 import com.mongodb.client.MongoCollection
+import handling.chatHandling.ChatDataManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import models.User
+import models.UsersList
 import org.litote.kmongo.*
 import org.slf4j.LoggerFactory
 
-class UserDataManager(private val usersCollection: MongoCollection<User>) {
+class UserDataManager(private val usersCollection: MongoCollection<User>, private val chatDataManager: ChatDataManager) {
     private val logger = LoggerFactory.getLogger("user data manager")
 
     suspend fun signOnUser(user: User): Boolean {
@@ -37,6 +39,19 @@ class UserDataManager(private val usersCollection: MongoCollection<User>) {
     suspend fun getUsersList(): List<User> {
         return withContext(Dispatchers.IO) {
             usersCollection.find().toList()
+        }
+    }
+
+    suspend fun getUsersListSorted(uid: String): UsersList {
+        return withContext(Dispatchers.IO) {
+            val userList = usersCollection.find().toList()
+            val chatList = chatDataManager.getAllChats(uid)
+            val knownUserIds = chatList.flatMap { listOf(it.usersUid.first, it.usersUid.second) }.toSet()
+
+            val knownUser = userList.filter { it._id in knownUserIds }
+            val unknownUsers = userList.filter { it._id !in knownUserIds }
+
+            UsersList(userList, knownUser, unknownUsers)
         }
     }
 

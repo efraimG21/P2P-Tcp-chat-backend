@@ -1,6 +1,6 @@
 package routing
 
-import chatHandling.ChatDataManager
+import handling.chatHandling.ChatDataManager
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import models.User
 import org.slf4j.LoggerFactory
-import userHandling.UserDataManager
+import handling.userHandling.UserDataManager
 
 val logger = LoggerFactory.getLogger("chatRouting")
 

@@ -1,4 +1,4 @@
-package chatHandling
+package handling.chatHandling
 
 import com.mongodb.MongoException
 import com.mongodb.client.MongoCollection
