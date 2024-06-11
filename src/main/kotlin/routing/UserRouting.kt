@@ -1,6 +1,7 @@
 package routing
 
 
+import handling.userHandling.UserDataManager
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -12,7 +13,6 @@ import models.ApiResponse
 import models.User
 import org.litote.kmongo.json
 import org.slf4j.LoggerFactory
-import handling.userHandling.UserDataManager
 
 fun Route.userRouting(userDataManager: UserDataManager) {
     val logger = LoggerFactory.getLogger("userRouting")
@@ -47,7 +47,10 @@ fun Route.userRouting(userDataManager: UserDataManager) {
                     userDataManager.signOnUser(userInfo)
                 }
                 if (success) {
-                    call.respond(HttpStatusCode.Created, ApiResponse(message = "User signed on successfully", content = userInfo._id))
+                    call.respond(
+                        HttpStatusCode.Created,
+                        ApiResponse(message = "User signed on successfully", content = userInfo._id)
+                    )
                 } else {
                     call.respond(HttpStatusCode.Conflict, "User with similar details already exists".json)
                 }

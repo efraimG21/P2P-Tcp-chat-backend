@@ -23,6 +23,13 @@ class ChatDataManager(private val chatCollection: MongoCollection<Chat>) {
         }
     }
 
+    suspend fun deleteUserChats(uid: String) {
+        withContext(Dispatchers.IO) {
+            chatCollection.deleteMany("{ \$or: [ { 'usersUid.first': '$uid' }, { 'usersUid.second': '$uid' } ] }")
+            logger.info("User chats deleted $uid.")
+        }
+    }
+
     private suspend fun createNewChat(uid1: String, uid2: String): Chat {
         val newChat = Chat(usersUid = Pair(uid1, uid2), messages = emptyList())
         withContext(Dispatchers.IO) {

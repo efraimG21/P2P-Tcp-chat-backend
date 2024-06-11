@@ -1,11 +1,11 @@
 package routing
 
+import handling.socketHandling.WebSocketManager
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import handling.socketHandling.WebSocketManager
 
 
 fun Route.webSocketRouting(webSocketManager: WebSocketManager) {

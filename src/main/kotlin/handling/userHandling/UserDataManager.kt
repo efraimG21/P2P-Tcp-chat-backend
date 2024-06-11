@@ -6,10 +6,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import models.User
 import models.UsersList
-import org.litote.kmongo.*
+import org.litote.kmongo.eq
+import org.litote.kmongo.findOne
+import org.litote.kmongo.ne
+import org.litote.kmongo.or
 import org.slf4j.LoggerFactory
 
-class UserDataManager(private val usersCollection: MongoCollection<User>, private val chatDataManager: ChatDataManager) {
+class UserDataManager(
+    private val usersCollection: MongoCollection<User>,
+    private val chatDataManager: ChatDataManager
+) {
     private val logger = LoggerFactory.getLogger("user data manager")
 
     suspend fun signOnUser(user: User): Boolean {
@@ -26,7 +32,13 @@ class UserDataManager(private val usersCollection: MongoCollection<User>, privat
 
     private suspend fun isUserDetailsExists(user: User): Boolean {
         return withContext(Dispatchers.IO) {
-            usersCollection.findOne(or(User::name eq user.name, User::port eq user.port, User::ipAddress eq user.ipAddress)) != null
+            usersCollection.findOne(
+                or(
+                    User::name eq user.name,
+                    User::port eq user.port,
+                    User::ipAddress eq user.ipAddress
+                )
+            ) != null
         }
     }
 
@@ -44,14 +56,14 @@ class UserDataManager(private val usersCollection: MongoCollection<User>, privat
 
     suspend fun getUsersListSorted(uid: String): UsersList {
         return withContext(Dispatchers.IO) {
-            val userList = usersCollection.find().toList()
+            val userList = usersCollection.find(User::_id ne uid).toList()
             val chatList = chatDataManager.getAllChats(uid)
             val knownUserIds = chatList.flatMap { listOf(it.usersUid.first, it.usersUid.second) }.toSet()
 
             val knownUser = userList.filter { it._id in knownUserIds }
             val unknownUsers = userList.filter { it._id !in knownUserIds }
 
-            UsersList(userList, knownUser, unknownUsers)
+            UsersList(userList, unknownUsers, knownUser)
         }
     }
 
@@ -68,7 +80,7 @@ class UserDataManager(private val usersCollection: MongoCollection<User>, privat
 
     suspend fun deleteUser(uid: String) {
         withContext(Dispatchers.IO) {
-            usersCollection.deleteOne(User::_id eq uid);
+            usersCollection.deleteOne(User::_id eq uid)
         }
     }
 }
