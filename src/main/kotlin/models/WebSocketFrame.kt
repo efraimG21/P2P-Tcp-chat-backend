@@ -3,31 +3,30 @@ package models
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
+
 @Serializable
-data class WebSocketFrame(
-    val typeOf: String, // 'userLogIn' | 'userLogOut' | 'sendMessage' | 'messageReceived' | 'messageRead'
+data class WebSocketFrame (
+    val typeOf: String, //'userLogIn' | 'userLogOut' | 'message' | 'sendMessage'  | 'messageReceived' | 'messageRead'
     @Contextual
-    val content: Any,
+    val frame: Any,
+)
+
+@Serializable
+data class IncomingWebSocketFrame (
+    val typeOf: String,
+    val frame: MessageWebSocketFrame,
+)
+
+@Serializable
+data class MessageWebSocketFrame(
+    val chatUid: String,
+    val receivedUid: String,
+    val content: String?,
+    val timeStamp: String?,
 )
 
 //@Serializable
-//sealed class FrameContent {
-//
-//    @Serializable
-//    @kotlinx.serialization.SerialName("userContent")
-//    data class UserContent(val user: User) : FrameContent()
-//
-//
-//    @Serializable
-//    @kotlinx.serialization.SerialName("stringContent")
-//    data class StringContent(val content: String) : FrameContent()
-//
-//
-//    @Serializable
-//    @kotlinx.serialization.SerialName("frameMessage")
-//    data class FrameMessageSocket(
-//        val chatUID: String,
-//        val uidReceived: String,
-//        val content: String
-//    ) : FrameContent()
-//}
+//data class UpdateMessagesStatusWebSocketFrame (
+//    val chatUid: String,
+//    val senderUid: String,
+//)

@@ -1,5 +1,6 @@
 package handling.chatHandling
 
+import ch.qos.logback.core.status.Status
 import com.mongodb.MongoException
 import com.mongodb.client.MongoCollection
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +69,16 @@ class ChatDataManager(private val chatCollection: MongoCollection<Chat>) {
             } catch (e: MongoException) {
                 logger.error("Error fetching chats: ${e.message}")
                 emptyList()
+            }
+        }
+    }
+
+    suspend fun updateMessagesStatus(chatUid: String, status: String) {
+        withContext(Dispatchers.IO) {
+            val chat: Chat? = chatCollection.findOne(Chat::_id eq chatUid)
+            if (chat !== null) {
+                chat.messages.forEach {
+                }
             }
         }
     }

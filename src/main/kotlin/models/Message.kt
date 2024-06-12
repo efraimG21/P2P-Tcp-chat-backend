@@ -9,7 +9,7 @@ data class Message(
     val senderUid: String,
     val content: String,
     @Contextual
-    val timeStamp: Date,
-    val status: String,
+    val timeStamp: String,
+    val status: String, //'Sent' | 'Received' | 'Read'
 )
 

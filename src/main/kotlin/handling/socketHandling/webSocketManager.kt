@@ -8,6 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import models.IncomingWebSocketFrame
+import models.Message
+import models.MessageWebSocketFrame
 import models.WebSocketFrame
 import org.litote.kmongo.json
 import org.slf4j.LoggerFactory
@@ -33,14 +36,27 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
 
     suspend fun incomingFrame(uid: String, frame: String) {
         try {
-            val webSocketFrame = Json.decodeFromString<WebSocketFrame>(frame)
+            val webSocketFrame = Json.decodeFromString<IncomingWebSocketFrame>(frame)
             when (webSocketFrame.typeOf) {
-                "sendMessage" -> {}
-                "messageReceived", "messageRead" -> {}
+                "sendMessage" -> { handleSendMessage(uid, webSocketFrame.frame) }
+                "messageReceived" -> { notificationUser(webSocketFrame.frame.receivedUid,"messageReceived", webSocketFrame.frame) }
             }
 
         } catch (e: Exception) {
             logger.error("Error processing frame: ${e.message}")
+        }
+    }
+
+    private suspend fun handleSendMessage(uid: String, frame: MessageWebSocketFrame) {
+        withContext(Dispatchers.IO) {
+            if (frame.content !== null && frame.timeStamp !== null) {
+                val message = Message(uid, frame.content, frame.timeStamp, "Sent")
+                chatDataManager.addMessage(
+                    frame.chatUid,
+                    message
+                )
+                notificationUser(frame.receivedUid, "sendMessage", message)
+            }
         }
     }
 
@@ -63,6 +79,25 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
     }
 
     private suspend fun notification(message: String, frame: Any) {
+        withContext(Dispatchers.IO) {
+            when (message) {
+                "userLogIn", "userLogOut" -> { notificationAllUsers(message, frame) }
+            }
+        }
+    }
+
+    private suspend fun notificationUser(userReceivedUid: String, message: String, frame: Any) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                logger.info("Received user data for user: $userReceivedUid")
+                socketSessionsCollection[userReceivedUid]?.send(Frame.Text(WebSocketFrame(message, frame).json))
+            } catch (e: Exception) {
+                logger.error("Error sending message: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun notificationAllUsers(message: String, frame: Any) {
         this.socketSessionsCollection.forEach { (uid, session) ->
             if (uid != currentUserUID) {
                 CoroutineScope(Dispatchers.IO).launch {
