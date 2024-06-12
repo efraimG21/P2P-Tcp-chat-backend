@@ -3,15 +3,9 @@ package handling.socketHandling
 import handling.chatHandling.ChatDataManager
 import handling.userHandling.UserDataManager
 import io.ktor.websocket.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
-import models.IncomingWebSocketFrame
-import models.Message
-import models.MessageWebSocketFrame
-import models.WebSocketFrame
+import models.*
 import org.litote.kmongo.json
 import org.slf4j.LoggerFactory
 import java.lang.Thread.sleep
@@ -24,13 +18,12 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
 
     suspend fun onStartConnection(uid: String, session: DefaultWebSocketSession) {
         val user = userDataManager.getUser(uid)
-
         if (!socketSessionsCollection.containsKey(uid) && user != null) {
             currentUserUID = uid
             socketSessionsCollection[uid] = session
             notification("userLogIn", user)
         } else {
-            session.close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "UID already connected"))
+            session.close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "UID already connected or user not found"))
         }
     }
 
@@ -38,10 +31,9 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
         try {
             val webSocketFrame = Json.decodeFromString<IncomingWebSocketFrame>(frame)
             when (webSocketFrame.typeOf) {
-                "sendMessage" -> { handleSendMessage(uid, webSocketFrame.frame) }
-                "messageReceived" -> { notificationUser(webSocketFrame.frame.receivedUid,"messageReceived", webSocketFrame.frame) }
+                "sendMessage" -> handleSendMessage(uid, webSocketFrame.frame)
+                "messageReceived" -> notificationUser(webSocketFrame.frame.receivedUid, "messageReceived", webSocketFrame.frame)
             }
-
         } catch (e: Exception) {
             logger.error("Error processing frame: ${e.message}")
         }
@@ -49,13 +41,12 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
 
     private suspend fun handleSendMessage(uid: String, frame: MessageWebSocketFrame) {
         withContext(Dispatchers.IO) {
-            if (frame.content !== null && frame.timeStamp !== null) {
-                val message = Message(uid, frame.content, frame.timeStamp, "Sent")
-                chatDataManager.addMessage(
-                    frame.chatUid,
-                    message
-                )
+            if (frame.content != null && frame.timeStamp != null) {
+                val message = Message(uid, frame.content, frame.timeStamp, MessageStatus.Sent)
+                chatDataManager.addMessage(frame.chatUid, message)
                 notificationUser(frame.receivedUid, "sendMessage", message)
+            } else {
+                logger.warn("Received incomplete message frame: $frame")
             }
         }
     }
@@ -65,23 +56,20 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
             session.close()
             socketSessionsCollection.remove(uid)
             logger.info("Disconnected session for UID: $uid")
-            sleep(5000)
+            delay(5000)
             if (!socketSessionsCollection.containsKey(uid)) {
-                logger.info("Deleted UID: $uid")
+                logger.info("Deleting data for UID: $uid")
                 notification("userLogOut", uid)
                 chatDataManager.deleteUserChats(uid)
                 userDataManager.deleteUser(uid)
-
             }
-
         }
-
     }
 
     private suspend fun notification(message: String, frame: Any) {
         withContext(Dispatchers.IO) {
             when (message) {
-                "userLogIn", "userLogOut" -> { notificationAllUsers(message, frame) }
+                "userLogIn", "userLogOut" -> notificationAllUsers(message, frame)
             }
         }
     }
@@ -89,7 +77,7 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
     private suspend fun notificationUser(userReceivedUid: String, message: String, frame: Any) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                logger.info("Received user data for user: $userReceivedUid")
+                logger.info("Sending notification to user: $userReceivedUid")
                 socketSessionsCollection[userReceivedUid]?.send(Frame.Text(WebSocketFrame(message, frame).json))
             } catch (e: Exception) {
                 logger.error("Error sending message: ${e.message}")
@@ -98,13 +86,13 @@ class WebSocketManager(private val userDataManager: UserDataManager, private val
     }
 
     private suspend fun notificationAllUsers(message: String, frame: Any) {
-        this.socketSessionsCollection.forEach { (uid, session) ->
+        socketSessionsCollection.forEach { (uid, session) ->
             if (uid != currentUserUID) {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         session.send(Frame.Text(WebSocketFrame(message, frame).json))
                     } catch (e: Exception) {
-                        logger.error("Error sending message: ${e.message}")
+                        logger.error("Error sending message to user $uid: ${e.message}")
                     }
                 }
             }

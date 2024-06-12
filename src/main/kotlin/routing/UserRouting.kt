@@ -86,8 +86,8 @@ fun Route.userRouting(userDataManager: UserDataManager) {
                 }
                 call.respond(HttpStatusCode.OK, sortedList)
             } catch (e: Exception) {
-                logger.error("Error retrieving user list: ${e.message}", e)
-                call.respond(HttpStatusCode.InternalServerError, "Error retrieving user list: ${e.message}")
+                logger.error("Error retrieving sorted user list: ${e.message}", e)
+                call.respond(HttpStatusCode.InternalServerError, "Error retrieving sorted user list: ${e.message}")
             }
         }
 

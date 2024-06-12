@@ -72,14 +72,4 @@ class ChatDataManager(private val chatCollection: MongoCollection<Chat>) {
             }
         }
     }
-
-    suspend fun updateMessagesStatus(chatUid: String, status: String) {
-        withContext(Dispatchers.IO) {
-            val chat: Chat? = chatCollection.findOne(Chat::_id eq chatUid)
-            if (chat !== null) {
-                chat.messages.forEach {
-                }
-            }
-        }
-    }
 }

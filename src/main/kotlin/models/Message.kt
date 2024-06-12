@@ -10,6 +10,12 @@ data class Message(
     val content: String,
     @Contextual
     val timeStamp: String,
-    val status: String, //'Sent' | 'Received' | 'Read'
+    val status: MessageStatus,
 )
+
+enum class MessageStatus(val code: Int) {
+    Sent(0),
+    Received(1),
+    Read(2);
+}
 

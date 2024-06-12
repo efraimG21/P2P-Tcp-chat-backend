@@ -24,9 +24,3 @@ data class MessageWebSocketFrame(
     val content: String?,
     val timeStamp: String?,
 )
-
-//@Serializable
-//data class UpdateMessagesStatusWebSocketFrame (
-//    val chatUid: String,
-//    val senderUid: String,
-//)
